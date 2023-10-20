@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "/Users/bulatmotygullin/Documents/Processor/Processor/commands.h"
-#include "/Users/bulatmotygullin/Documents/Processor/Processor/buffer_process/buffer_process.h"
-#include "/Users/bulatmotygullin/Documents/Processor/Processor/stack/stack.h"
+#include "../commands.h"
+#include "../buffer_process/buffer_process.h"
+#include "../stack/stack.h"
 
 void aligned_fwrite(const int command_value, FILE *dest_file);
+void aligned_buf_print(const int command_value, char *buf);
 
 int main()
 {
@@ -34,99 +35,131 @@ int main()
 		exit(EXIT_FAILURE);
 	}
 
+	struct Buffer_w_info human_cmds_n_len = {};
+	struct Buffer_w_info byte_code_n_len = {};
+	size_t file_length = get_file_length(human_commands);
+	human_cmds_n_len.length = file_length;
+	byte_code_n_len.length = file_length;
+	human_cmds_n_len.buf = (char *)calloc(human_cmds_n_len.length, sizeof(char));
+	byte_code_n_len.buf = (char *)calloc(human_cmds_n_len.length, sizeof(char));
 
-	const size_t buffer_size = 10;
+	if(human_cmds_n_len.buf == NULL)
+	{
+		fprintf(stderr, "Not enough memory for allocation.\n");
+	}
 
+	size_t read_elems_amount =
+		fread(human_cmds_n_len.buf, sizeof(char), human_cmds_n_len.length, human_commands);
+
+	if(read_elems_amount != human_cmds_n_len.length)
+	{
+		if(ferror(human_commands))
+		{
+			perror("ERROR:");
+
+			exit(EXIT_FAILURE);
+		}
+		else if(feof(human_commands))
+		{
+			fprintf(stderr ,"read_elems_amount != human_cmds_n_len.length because end of the file "
+			"EOF was reached.\n");
+		}
+	}
+
+	fclose(human_commands);
+
+	size_t amount_of_lines = count_file_lines(human_cmds_n_len);
+	printf("LINES = %lu\n", amount_of_lines);
+
+	char * *cmd_ptrs = (char * *)calloc(amount_of_lines, sizeof(char *));
+	ptr_arranger(cmd_ptrs, human_cmds_n_len);
+
+
+	const size_t buffer_size = 228; //может задать размер как максимальную длну комнады в файле??
 	char command_buffer[buffer_size] = {};
 
-	double temp_value = 0;
+	double argument_value = 0;
 	int reg_type = 0;
 
-	while(fscanf(human_commands ,"%s", command_buffer) != EOF) //sscanf аналогично онегину
+	for(size_t line_ID = 0; line_ID < amount_of_lines; line_ID++)
 	{
-		if(!strncmp(command_buffer, "push", buffer_size))
+		sscanf(cmd_ptrs[line_ID], "%s", command_buffer);
+
+		if(!strncmp(command_buffer, "push", strlen("push"))) // я обязательно сделаю макрос =)
 		{
 			printf("PUSH log:\n");
 			fprintf(made_txt_byte_code, "%d ", PUSH);
 
 
-			if(fscanf(human_commands ,"%lf", &temp_value) == 0)
+			if(sscanf(cmd_ptrs[line_ID] + strlen("push") ,"%lf", &argument_value) == 0)
 			{
-				printf("reg detected\n"); //log
-				fscanf(human_commands ,"%s", command_buffer); //теперь в комманд буфере лежит rax или тп
+				printf("reg detected\n");
+				sscanf(cmd_ptrs[line_ID] + strlen("push") ,"%s", command_buffer);
 
 				reg_type = command_buffer[1] - 'a' + 1;
 				fprintf(made_txt_byte_code, "%d ", reg_type);
-				printf("reg type: %d\n", reg_type); //log
+				printf("reg type: %d\n", reg_type);
 
-				//bin logistics:
+				snprintf(byte_code_n_len.buf, sizeof(int), "%d", PUSH);
 
-				int ONE = PUSH; //как без такого костыля???
-				fwrite(&ONE, sizeof(int), 1, made_bin_byte_code);
+				snprintf(byte_code_n_len.buf, sizeof(int), "%d", reg_type);
 
-				fwrite(&reg_type, sizeof(int), 1, made_bin_byte_code);
-				// int temp_command_value = (reg_type << 16) | PUSH;
+				sscanf(cmd_ptrs[line_ID] + strlen("push") + strlen(command_buffer) + 1 ,
+					"%lf", &argument_value);//да простит меня бог за такое извращение....
 
-				// printf("Here is whats going into bin file:\n%d\n", temp_command_value);//logging
-				// show_bits(temp_command_value, stdout);
+				printf("Here is whats going into bin file:\n%lf\n", argument_value);
 
-				// aligned_fwrite(temp_command_value, made_bin_byte_code);
+				snprintf(byte_code_n_len.buf, sizeof(int), "%lf", argument_value);
 
-				//value that we push in reg:
-				fscanf(human_commands ,"%lf", &temp_value);
-
-				printf("Here is whats going into bin file:\n%lf\n", temp_value);//logging
-
-				fwrite(&temp_value, sizeof(double), 1, made_bin_byte_code); //copypaste
-				fprintf(made_txt_byte_code, "%.2lf\n", temp_value);
+				fprintf(made_txt_byte_code, "%.2lf\n", argument_value);
 			}
 			else
 			{
-				aligned_fwrite(PUSH, made_bin_byte_code);
-				
-				printf("Here is whats going into bin file:\n%lf\n", temp_value);//logging
+				aligned_buf_print(PUSH, byte_code_n_len.buf);
 
-				fwrite(&temp_value, sizeof(double), 1, made_bin_byte_code); //copypaste
-				fprintf(made_txt_byte_code, "%.2lf\n", temp_value);
+				printf("Here is whats going into bin file:\n%lf\n", argument_value);
+
+				snprintf(byte_code_n_len.buf, sizeof(double), "%lf", argument_value);
+
+				fprintf(made_txt_byte_code, "%.2lf\n", argument_value);
 			}
 		}
 		else if(!strncmp(command_buffer, "div", buffer_size))
 		{
 			fprintf(made_txt_byte_code, "%d\n", DIV);
-			aligned_fwrite(DIV, made_bin_byte_code);
-
-			//как записать div в бинарном виде в файл?
+			aligned_buf_print(DIV, byte_code_n_len.buf);
 		}
 		else if(!strncmp(command_buffer, "sub", buffer_size))
 		{
 			fprintf(made_txt_byte_code, "%d\n", SUB);
-			aligned_fwrite(SUB, made_bin_byte_code);
+			aligned_buf_print(SUB, byte_code_n_len.buf);
 		}
 		else if(!strncmp(command_buffer, "out", buffer_size))
 		{
 			fprintf(made_txt_byte_code, "%d\n", OUT);
-			aligned_fwrite(OUT, made_bin_byte_code);
+			aligned_buf_print(OUT, byte_code_n_len.buf);
 		}
 		else if(!strncmp(command_buffer, "HLT", buffer_size))
 		{
 			fprintf(made_txt_byte_code, "%d\n", HLT);
-			aligned_fwrite(HLT, made_bin_byte_code);
+			aligned_buf_print(HLT, byte_code_n_len.buf);
 		}
 		else
 		{
 			fprintf(stderr, "Unknown command\n");
 		}
+
 	}
+
+	fwrite(byte_code_n_len.buf, sizeof(char), byte_code_n_len.length, made_bin_byte_code);
 
 	return 0;
 }
 
 
-void aligned_fwrite(const int command_value, FILE *dest_file)
+void aligned_buf_print(const int command_value, char *buf)
 {
-	fwrite(&command_value, sizeof(int), 1, dest_file);
+	snprintf(buf, sizeof(int), "%d", command_value);
 
-	const int ZERO = 0;
-	fwrite(&ZERO, sizeof(int), 1, dest_file); //aligning
-	//как fwrite ноль без таких вот костылей?
+	snprintf(buf, sizeof(int), "%d", ZERO);
 }

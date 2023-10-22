@@ -1,4 +1,6 @@
-push rax 666.6
+push 3000.3000
+pop rcx
+push rcx
 push 3
 div
 push 700

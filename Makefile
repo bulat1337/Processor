@@ -25,8 +25,8 @@ FLAGS = -D _DEBUG -ggdb3 \
 
 LINK_FLAGS = -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,nonnull-attribute,null,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr
 
-$(TARGET_1): $(PREF_SPU_OBJ)SPU.o $(PREF_STK_OBJ)stack.o $(PREF_STK_OBJ)helpers.o $(PREF_BUF_PROC_OBJ)buffer_process.o
-	@ $(CC) $(LINK_FLAGS) $(PREF_SPU_OBJ)SPU.o $(PREF_STK_OBJ)stack.o $(PREF_STK_OBJ)helpers.o $(PREF_BUF_PROC_OBJ)buffer_process.o -o $(TARGET_1)
+$(TARGET_1): $(PREF_SPU_OBJ)SPU.o $(PREF_STK_OBJ)stack.o $(PREF_STK_OBJ)helpers.o $(PREF_BUF_PROC_OBJ)buffer_process.o $(PREF_ASM_OBJ)logging.o
+	@ $(CC) $(LINK_FLAGS) $(PREF_SPU_OBJ)SPU.o $(PREF_STK_OBJ)stack.o $(PREF_STK_OBJ)helpers.o $(PREF_BUF_PROC_OBJ)buffer_process.o $(PREF_ASM_OBJ)logging.o -o $(TARGET_1)
 
 $(PREF_SPU_OBJ)SPU.o: $(PREF_SPU)SPU.cpp
 	@ $(CC) -c $(PREF_SPU)SPU.cpp -o $(PREF_SPU_OBJ)SPU.o $(FLAGS)
@@ -36,14 +36,18 @@ $(PREF_STK_OBJ)stack.o: $(PREF_STK)stack.cpp
 
 $(PREF_STK_OBJ)helpers.o: $(PREF_STK)helpers.cpp
 	@ $(CC) -c $(PREF_STK)helpers.cpp -o $(PREF_STK_OBJ)helpers.o $(FLAGS)
+
 $(PREF_BUF_PROC_OBJ)buffer_process.o: $(PREF_BUF_PROC)buffer_process.cpp
 	@ $(CC) -c $(PREF_BUF_PROC)buffer_process.cpp -o $(PREF_BUF_PROC_OBJ)buffer_process.o $(FLAGS)
 
-$(TARGET_2): $(PREF_ASM_OBJ)assembly.o $(PREF_STK_OBJ)stack.o $(PREF_STK_OBJ)helpers.o
-	@ $(CC) $(LINK_FLAGS) $(PREF_ASM_OBJ)assembly.o $(PREF_STK_OBJ)stack.o $(PREF_STK_OBJ)helpers.o  -o $(TARGET_2)
+$(TARGET_2): $(PREF_ASM_OBJ)assembly.o $(PREF_ASM_OBJ)logging.o $(PREF_STK_OBJ)stack.o $(PREF_STK_OBJ)helpers.o $(PREF_BUF_PROC_OBJ)buffer_process.o
+	@ $(CC) $(LINK_FLAGS) $(PREF_ASM_OBJ)assembly.o $(PREF_ASM_OBJ)logging.o $(PREF_STK_OBJ)stack.o $(PREF_STK_OBJ)helpers.o $(PREF_BUF_PROC_OBJ)buffer_process.o  -o $(TARGET_2)
 
 $(PREF_ASM_OBJ)assembly.o: $(PREF_ASM)assembly.cpp
 	@ $(CC) -c $(PREF_ASM)assembly.cpp -o $(PREF_ASM_OBJ)assembly.o $(FLAGS)
+
+$(PREF_ASM_OBJ)logging.o: $(PREF_ASM)logging.cpp
+	@ $(CC) -c $(PREF_ASM)logging.cpp -o $(PREF_ASM_OBJ)logging.o $(FLAGS)
 
 
 clean:

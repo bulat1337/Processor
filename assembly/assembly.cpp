@@ -5,13 +5,7 @@
 #include "../commands.h"
 #include "../buffer_process/buffer_process.h"
 #include "../stack/stack.h"
-
-struct Buf_w_carriage_n_len
-{
-	char *buf;
-	size_t carriage;
-	size_t length;
-};
+#include "logging.h"
 
 void write_to_buf(struct Buf_w_carriage_n_len *byte_code, const void *value, size_t size);
 void aligned_fwrite(const int command_value, FILE *dest_file);
@@ -53,9 +47,6 @@ int main()
 	}
 
 
-
-
-
 	size_t read_elems_amount =
 		fread(human_cmds_n_len.buf, sizeof(char), human_cmds_n_len.length, human_commands);
 
@@ -83,8 +74,8 @@ int main()
 	ptr_arranger(cmd_ptrs, human_cmds_n_len);
 
 	struct Buf_w_carriage_n_len byte_code = {};
-	byte_code.length = file_length;
-	byte_code.buf = (char *)calloc(amount_of_lines * sizeof(double) * 2 + 1, sizeof(char));
+	byte_code.length = amount_of_lines * sizeof(double) * 2 + 1;
+	byte_code.buf = (char *)calloc(byte_code.length, sizeof(char));
 
 
 	const size_t buffer_size = 228; //может задать размер как максимальную длну комнады в файле??
@@ -96,7 +87,7 @@ int main()
 	char reg_type = 0;
 	size_t buf_carriage = 0;
 	int command_code = 0;
-
+ //strncmp с большим буфером команд и карекой
 	for(size_t line_ID = 0; line_ID < amount_of_lines; line_ID++)
 	{
 		sscanf(cmd_ptrs[line_ID], "%s", command_buffer);
@@ -230,25 +221,10 @@ int main()
 
 	}
 
-	printf("----------------------------\n");
-	printf("IN BUF:\n");
-	for(size_t command_ID = 0; command_ID < amount_of_lines; command_ID++)
-	{
-		printf("COMMAND %lu:\n", command_ID + 1);
 
-		printf("command: %d\n", *(int *)(byte_code.buf + command_ID * sizeof(double) * 2));
-		printf("immediate const ID: %d\n",
-			*(char *)(byte_code.buf + sizeof(int) + command_ID * sizeof(double) * 2));
-		printf("register type: %d\n",
-			*(char *)(byte_code.buf + sizeof(int) + sizeof(char) + command_ID * sizeof(double) * 2));
-		printf("value: %lf\n",
-			*(double *)(byte_code.buf + sizeof(double) + command_ID * sizeof(double) * 2));
+	byte_code_buf_dump(&byte_code);
 
-		printf("\n");
-	}
-
-	printf("----------------------------\n");
-
+	fwrite(byte_code.buf, sizeof(char), byte_code.length, made_bin_byte_code);
 
 	return 0;
 }

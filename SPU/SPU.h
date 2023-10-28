@@ -9,7 +9,8 @@ const size_t amount_of_regs = 4;
 
 struct SPU
 {
-	Stack stk;
+	Stack main_stk;
+	Stack ret_stk;
 	elem_t regs[amount_of_regs];
 	Buf_w_carriage_n_len byte_code;
 };

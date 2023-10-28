@@ -28,7 +28,11 @@ int main()
 
 	byte_code_buf_dump(&VM.byte_code);
 
-	for(size_t ID = 0; ID < VM.byte_code.length; ID += 16)
+	size_t main_address = *(int *)VM.byte_code.buf;
+	printf("main_address = %lu\n", main_address);
+	printf("%d\n", *(int *)(VM.byte_code.buf + main_address * 16));
+
+	for(size_t ID = main_address * 16; ID < VM.byte_code.length; ID += 16)
 	{
 		switch(*(int *)(VM.byte_code.buf + ID)) // *(enum Commands *) ???
 		{
@@ -37,7 +41,7 @@ int main()
 				{
 					if(*(char *)(VM.byte_code.buf + ID + sizeof(int) + sizeof(char)) == 0)
 					{
-						STACK_PUSH(&(VM.stk),
+						STACK_PUSH(&(VM.main_stk),
 							*(elem_t *)(VM.byte_code.buf + ID + sizeof(double)));
 					}
 					else
@@ -48,7 +52,7 @@ int main()
 				}
 				else if(VM.byte_code.buf + ID + sizeof(int) + sizeof(char) != 0)
 				{
-					STACK_PUSH(&(VM.stk),
+					STACK_PUSH(&(VM.main_stk),
 						VM.regs[*(char *)(VM.byte_code.buf + ID + sizeof(int) + sizeof(char))]);
 					//нормальная функциональная адресация
 				}
@@ -60,42 +64,42 @@ int main()
 			case IN:
 				printf("Please enter value: ");
 				scanf("%lf", &temp_user_entered_value);
-				STACK_PUSH(&VM.stk, temp_user_entered_value);
+				STACK_PUSH(&VM.main_stk, temp_user_entered_value);
 				break;
 			case POP:
 				VM.regs[*(char *)(VM.byte_code.buf + ID + sizeof(int) + sizeof(char))] =
-					STACK_POP(&(VM.stk)).deleted_element;
+					STACK_POP(&(VM.main_stk)).deleted_element;
 					printf("%d reg is %lf now\n",
 						*(char *)(VM.byte_code.buf + ID + sizeof(int) + sizeof(char)),
 						VM.regs[*(char *)(VM.byte_code.buf + ID + sizeof(int) + sizeof(char))]);
 				break;
 			case SUB:
-				temp_sub_value_B = STACK_POP(&(VM.stk)).deleted_element;
-				temp_sub_value_A = STACK_POP(&(VM.stk)).deleted_element;
+				temp_sub_value_B = STACK_POP(&(VM.main_stk)).deleted_element;
+				temp_sub_value_A = STACK_POP(&(VM.main_stk)).deleted_element;
 
-				STACK_PUSH(&(VM.stk), temp_sub_value_A - temp_sub_value_B);
+				STACK_PUSH(&(VM.main_stk), temp_sub_value_A - temp_sub_value_B);
 				break;
 
 			case ADD:
-				STACK_PUSH(&(VM.stk),
-							STACK_POP(&(VM.stk)).deleted_element +
-							STACK_POP(&(VM.stk)).deleted_element);
+				STACK_PUSH(&(VM.main_stk),
+							STACK_POP(&(VM.main_stk)).deleted_element +
+							STACK_POP(&(VM.main_stk)).deleted_element);
 				break;
 
 			case DIV:
-				temp_div_value_B = STACK_POP(&(VM.stk)).deleted_element;
-				temp_div_value_A = STACK_POP(&(VM.stk)).deleted_element;
+				temp_div_value_B = STACK_POP(&(VM.main_stk)).deleted_element;
+				temp_div_value_A = STACK_POP(&(VM.main_stk)).deleted_element;
 
 				printf(" DIV:\n%lf / %lf = %lf\n",
 					temp_div_value_A, temp_div_value_B, temp_div_value_A / temp_div_value_B);
 
-				STACK_PUSH(&(VM.stk), temp_div_value_A / temp_div_value_B);
+				STACK_PUSH(&(VM.main_stk), temp_div_value_A / temp_div_value_B);
 				break;
 
 			case MUL:
-				STACK_PUSH(&(VM.stk),
-							STACK_POP(&(VM.stk)).deleted_element *
-							STACK_POP(&(VM.stk)).deleted_element);
+				STACK_PUSH(&(VM.main_stk),
+							STACK_POP(&(VM.main_stk)).deleted_element *
+							STACK_POP(&(VM.main_stk)).deleted_element);
 				break;
 			case JMP:
 				printf("yo there is jmp to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
@@ -105,8 +109,8 @@ int main()
 			case JA:
 				printf("yo there is ja to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
 
-				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
-				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_B = STACK_POP(&(VM.main_stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.main_stk)).deleted_element;
 
 				printf("im ja'ing cause %lf > %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
 
@@ -118,8 +122,8 @@ int main()
 			case JB:
 				printf("yo there is jb to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
 
-				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
-				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_B = STACK_POP(&(VM.main_stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.main_stk)).deleted_element;
 
 				printf("im jb'ing cause %lf < %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
 
@@ -137,8 +141,8 @@ int main()
 			case JAE:
 				printf("yo there is jae to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
 
-				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
-				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_B = STACK_POP(&(VM.main_stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.main_stk)).deleted_element;
 
 				printf("im jae'ing cause %lf >= %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
 
@@ -150,8 +154,8 @@ int main()
 			case JE:
 				printf("yo there is je to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
 
-				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
-				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_B = STACK_POP(&(VM.main_stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.main_stk)).deleted_element;
 
 				printf("im je'ing cause %lf == %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
 
@@ -163,8 +167,8 @@ int main()
 			case JNE:
 				printf("yo there is jne to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
 
-				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
-				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_B = STACK_POP(&(VM.main_stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.main_stk)).deleted_element;
 
 				printf("im jne'ing cause %lf != %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
 
@@ -173,8 +177,18 @@ int main()
 					ID = (*(int *)(VM.byte_code.buf + ID + sizeof(int)) - 2) * 16;
 				}
 				break;
+			case CALL:
+				printf("yo there is call to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
+				STACK_PUSH(&(VM.ret_stk), ID);
+				printf("i saved %lu * 16 for later return\n", (ID + 16) / 16);
+				ID = (*(int *)(VM.byte_code.buf + ID + sizeof(int)) - 2) * 16;
+
+				break;
+			case RET:
+				ID = STACK_POP(&(VM.ret_stk)).deleted_element;
+				break;
 			case OUT:
-				printf("ANSWER: %lf\n", STACK_POP(&(VM.stk)).deleted_element);
+				printf("ANSWER: %lf\n", STACK_POP(&(VM.main_stk)).deleted_element);
 				break;
 
 			case HLT:
@@ -182,6 +196,7 @@ int main()
 				break;
 			default:
 				printf("The command is yet unknown\n");
+
 				break;
 		}
 	}
@@ -199,8 +214,10 @@ void SPU_ctor(SPU *VM)
 		exit(EXIT_FAILURE);
 	}
 
-	struct Stack stk = {};
-	STACK_CTOR(&(VM->stk), 10);
+	struct Stack main_stk = {};
+	STACK_CTOR(&(VM->main_stk), 10);
+	struct Stack ret_stk = {};
+	STACK_CTOR(&(VM->ret_stk), 10);
 
 	for(size_t reg_ID = 0; reg_ID < amount_of_regs; reg_ID++)
 	{

@@ -19,6 +19,8 @@ enum Commands
 	JBE = 13,
 	JE = 14,
 	JNE = 15,
+	CALL = 16,
+	RET = 17,
 	HLT = -1,
 };
 

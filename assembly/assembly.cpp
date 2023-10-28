@@ -110,7 +110,7 @@ int main()
 	ptr_arranger(cmd_ptrs, human_cmds_n_len);
 //human_cmds buf logic end
 
-	struct Buf_w_carriage_n_len byte_code = {};
+	struct Buf_w_carriage_n_len byte_code = {.carriage = 16};
 	byte_code.length = amount_of_lines * sizeof(double) * 2 + 1;
 	byte_code.buf = (char *)calloc(byte_code.length, sizeof(char));
 
@@ -217,7 +217,7 @@ int main()
 
 			write_to_buf(&byte_code, &void_alignment_value, sizeof(double));
 		}
-		else if(!strncmp(cmd_ptrs[line_ID], "div", strlen("pop")))
+		else if(!strncmp(cmd_ptrs[line_ID], "div", strlen("div")))
 		{
 			fprintf(made_txt_byte_code, "%d\n", DIV);
 
@@ -238,6 +238,18 @@ int main()
 			write_to_buf(&byte_code, &command_code, sizeof(int));
 
 			write_to_buf(&byte_code, &void_alignment_value, sizeof(double));
+		}
+		else if(!strncmp(cmd_ptrs[line_ID], ":main", strlen(":main")))
+		{
+			char *byte_of_main_address_value = (char *)&line_ID;
+			size_t written_byte_of_main_address_value_ID = 0;
+			for(size_t ID = 0; ID < sizeof(int); ID++)
+			{
+				snprintf(byte_code.buf + written_byte_of_main_address_value_ID,
+					sizeof(char) + 1, "%c", *(byte_of_main_address_value + ID));
+				written_byte_of_main_address_value_ID++;
+			}
+			printf("main is on %lu\n", line_ID);
 		}
 		else if(!strncmp(cmd_ptrs[line_ID], ":", strlen(":"))) //работает при первом же проходе
 		{
@@ -271,6 +283,21 @@ int main()
 		{
 			WRITE_JMP(JNE)
 		}
+		else if(!strncmp(cmd_ptrs[line_ID], "call", strlen("call")))
+		{
+			WRITE_JMP(CALL)
+		}
+		else if(!strncmp(cmd_ptrs[line_ID], "ret", strlen("ret")))
+		{
+			fprintf(made_txt_byte_code, "%d\n", RET);
+
+			command_code = RET;
+			write_to_buf(&byte_code, &command_code, sizeof(int));
+			command_code = ZERO;
+			write_to_buf(&byte_code, &command_code, sizeof(int));
+
+			write_to_buf(&byte_code, &void_alignment_value, sizeof(double));
+		}
 		else if(!strncmp(cmd_ptrs[line_ID], "out", strlen("out")))
 		{
 			fprintf(made_txt_byte_code, "%d\n", OUT);
@@ -297,6 +324,9 @@ int main()
 		else
 		{
 			fprintf(stderr, "Unknown command\n");
+			write_to_buf(&byte_code, &void_alignment_value, sizeof(double));
+			write_to_buf(&byte_code, &void_alignment_value, sizeof(double));
+			// супер мега суровый алайнгнинг.......
 		}
 
 	}

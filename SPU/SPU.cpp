@@ -22,6 +22,8 @@ int main()
 	elem_t temp_sub_value_B = NAN;
 	elem_t temp_div_value_A = NAN;
 	elem_t temp_div_value_B = NAN;
+	elem_t temp_jcmp_value_A = NAN;
+	elem_t temp_jcmp_value_B = NAN;
 	elem_t temp_user_entered_value = NAN;
 
 	byte_code_buf_dump(&VM.byte_code);
@@ -63,6 +65,9 @@ int main()
 			case POP:
 				VM.regs[*(char *)(VM.byte_code.buf + ID + sizeof(int) + sizeof(char))] =
 					STACK_POP(&(VM.stk)).deleted_element;
+					printf("%d reg is %lf now\n",
+						*(char *)(VM.byte_code.buf + ID + sizeof(int) + sizeof(char)),
+						VM.regs[*(char *)(VM.byte_code.buf + ID + sizeof(int) + sizeof(char))]);
 				break;
 			case SUB:
 				temp_sub_value_B = STACK_POP(&(VM.stk)).deleted_element;
@@ -92,7 +97,82 @@ int main()
 							STACK_POP(&(VM.stk)).deleted_element *
 							STACK_POP(&(VM.stk)).deleted_element);
 				break;
+			case JMP:
+				printf("yo there is jmp to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
+				ID = (*(int *)(VM.byte_code.buf + ID + sizeof(int)) - 2) * 16;
 
+				break;
+			case JA:
+				printf("yo there is ja to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
+
+				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+
+				printf("im ja'ing cause %lf > %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
+
+				if(temp_jcmp_value_A > temp_jcmp_value_B)
+				{
+					ID = (*(int *)(VM.byte_code.buf + ID + sizeof(int)) - 2) * 16;
+				}
+				break;
+			case JB:
+				printf("yo there is jb to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
+
+				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+
+				printf("im jb'ing cause %lf < %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
+
+				if(temp_jcmp_value_A < temp_jcmp_value_B)
+				{
+					ID = (*(int *)(VM.byte_code.buf + ID + sizeof(int)) - 2) * 16;
+				}
+
+				// printf("here is what on jb address: %d %d\n", *(int *)(VM.byte_code.buf + ID),
+				// 	*(int *)(VM.byte_code.buf + ID + 16));
+				// printf("here is whats next: %d %d\n", *(int *)(VM.byte_code.buf + ID + 16 * 2),
+				// 	*(int *)(VM.byte_code.buf + ID + 16 * 3));
+
+				break;
+			case JAE:
+				printf("yo there is jae to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
+
+				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+
+				printf("im jae'ing cause %lf >= %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
+
+				if(temp_jcmp_value_A >= temp_jcmp_value_B)
+				{
+					ID = (*(int *)(VM.byte_code.buf + ID + sizeof(int)) - 2) * 16;
+				}
+				break;
+			case JE:
+				printf("yo there is je to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
+
+				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+
+				printf("im je'ing cause %lf == %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
+
+				if(temp_jcmp_value_A == temp_jcmp_value_B)
+				{
+					ID = (*(int *)(VM.byte_code.buf + ID + sizeof(int)) - 2) * 16;
+				}
+				break;
+			case JNE:
+				printf("yo there is jne to %d\n", *(int *)(VM.byte_code.buf + ID + sizeof(int)) - 1);
+
+				temp_jcmp_value_B = STACK_POP(&(VM.stk)).deleted_element;
+				temp_jcmp_value_A = STACK_POP(&(VM.stk)).deleted_element;
+
+				printf("im jne'ing cause %lf != %lf\n", temp_jcmp_value_A, temp_jcmp_value_B);
+
+				if(temp_jcmp_value_A != temp_jcmp_value_B)
+				{
+					ID = (*(int *)(VM.byte_code.buf + ID + sizeof(int)) - 2) * 16;
+				}
+				break;
 			case OUT:
 				printf("ANSWER: %lf\n", STACK_POP(&(VM.stk)).deleted_element);
 				break;

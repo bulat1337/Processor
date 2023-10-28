@@ -12,6 +12,13 @@ enum Commands
 	OUT = 6,
 	IN = 7,
 	POP = 8,
+	JMP = 9,
+	JA = 10,
+	JB = 11,
+	JAE = 12,
+	JBE = 13,
+	JE = 14,
+	JNE = 15,
 	HLT = -1,
 };
 
